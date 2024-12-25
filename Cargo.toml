@@ -3,6 +3,9 @@ name = "file-extension-fixer"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+lto = true
+
 [dependencies]
 indicatif = "0.17.9"
 infer = { version = "0.16.0", default-features = false }
