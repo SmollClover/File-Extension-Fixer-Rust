@@ -1,4 +1,5 @@
-use std::{env, fs::rename, fs::File, io::{BufReader, Read}, path::{Path, PathBuf}};
+use std::{env, fs::{rename, File}, io::{BufReader, Read}, path::{Path, PathBuf}};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use num_format::{Locale, ToFormattedString};
 use infer;
 
@@ -32,7 +33,14 @@ fn main() {
         }
     }
 
-    println!("Reading directory {} : {} files", path.to_str().unwrap(), file_paths.len().to_formatted_string(&Locale::de));
+    println!("Reading directory {} : {} files\n", path.to_str().unwrap(), file_paths.len().to_formatted_string(&Locale::de));
+
+    let multibar = MultiProgress::new();
+    let bar_style = ProgressStyle::with_template(" {elapsed} | ETA: {eta} | {wide_bar} | {pos}/{len} ").unwrap();
+    let bar = multibar.add(ProgressBar::new(file_paths.len().try_into().unwrap()));
+    bar.set_style(bar_style.clone());
+
+    bar.reset();
 
     for file_path in file_paths {
         let mut path = PathBuf::from(&file_path);
@@ -44,13 +52,22 @@ fn main() {
         reader.read(&mut buffer).expect(&format!("reading of first {} bytes of file failed", BUFFER_SIZE));
 
         let file_infer = infer::get(&buffer);
-        if file_infer.is_none() { continue; }
+        if file_infer.is_none() { 
+            bar.inc(1);
+            continue;
+        }
         let expected_extension = file_infer.unwrap().extension();
         path.set_extension(expected_extension);
 
-        if file_path == path.to_str().unwrap() { continue; }
+        if file_path == path.to_str().unwrap() { 
+            bar.inc(1);
+            continue;
+        }
         
-        println!("Renamed {} to {}", file_path, path.to_str().unwrap());
+        // println!("Renamed {} to {}", file_path, path.to_str().unwrap());
         rename(file_path, path).expect("failed renaming file");
+        bar.inc(1);
     }
+
+    bar.finish();
 }
