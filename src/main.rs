@@ -33,10 +33,10 @@ fn main() {
         }
     }
 
-    println!("Reading directory {} : {} files\n", path.to_str().unwrap(), file_paths.len().to_formatted_string(&Locale::de));
+    println!("Reading directory {} : {} files", path.to_str().unwrap(), file_paths.len().to_formatted_string(&Locale::de));
 
     let multibar = MultiProgress::new();
-    let bar_style = ProgressStyle::with_template(" {elapsed} | ETA: {eta} | {wide_bar} | {pos}/{len} ").unwrap();
+    let bar_style = ProgressStyle::with_template("\n {elapsed} | ETA: {eta} | {wide_bar} | {pos}/{len} ").unwrap();
     let bar = multibar.add(ProgressBar::new(file_paths.len().try_into().unwrap()));
     bar.set_style(bar_style.clone());
 
@@ -64,8 +64,8 @@ fn main() {
             continue;
         }
         
-        // println!("Renamed {} to {}", file_path, path.to_str().unwrap());
-        rename(file_path, path).expect("failed renaming file");
+        rename(&file_path, &path).expect("failed renaming file");
+        multibar.println(format!("{:12} | {} -> {}", file_infer.unwrap().mime_type(), &file_path, &path.to_str().unwrap())).unwrap();
         bar.inc(1);
     }
 
