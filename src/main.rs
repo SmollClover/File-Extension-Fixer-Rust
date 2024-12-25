@@ -33,6 +33,9 @@ fn main() {
         }
     }
 
+    let mut files_changed = 0;
+    let mut files_failed = 0;
+
     println!("Reading directory {} : {} files", path.to_str().unwrap(), file_paths.len().to_formatted_string(&Locale::de));
 
     let multibar = MultiProgress::new();
@@ -51,23 +54,32 @@ fn main() {
         let mut buffer = [0u8; BUFFER_SIZE];
         reader.read(&mut buffer).expect(&format!("reading of first {} bytes of file failed", BUFFER_SIZE));
 
+        if !(infer::is_video(&buffer) || infer::is_image(&buffer)) { continue; }
+
         let file_infer = infer::get(&buffer);
         if file_infer.is_none() { 
+            multibar.println(format!(" {:12} | {} -> Unable to detect", "?".repeat(12), &file_path)).unwrap();
+
+            files_failed += 1;
             bar.inc(1);
             continue;
         }
+
         let expected_extension = file_infer.unwrap().extension();
         path.set_extension(expected_extension);
 
-        if file_path == path.to_str().unwrap() { 
+        if file_path == path.to_str().unwrap() {
             bar.inc(1);
             continue;
         }
         
         rename(&file_path, &path).expect("failed renaming file");
-        multibar.println(format!("{:12} | {} -> {}", file_infer.unwrap().mime_type(), &file_path, &path.to_str().unwrap())).unwrap();
+        multibar.println(format!(" {:12} | {} -> {}", file_infer.unwrap().mime_type(), &file_path, &path.to_str().unwrap())).unwrap();
+        files_changed += 1;
         bar.inc(1);
     }
 
     bar.finish();
+
+    println!("\nChanged : {}\nFailed  : {}", files_changed.to_formatted_string(&Locale::de), files_failed.to_formatted_string(&Locale::de));
 }
