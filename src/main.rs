@@ -43,11 +43,14 @@ fn main() {
         let mut buffer = [0u8; BUFFER_SIZE];
         reader.read(&mut buffer).expect(&format!("reading of first {} bytes of file failed", BUFFER_SIZE));
 
-        let expected_extension = infer::get(&buffer).expect("failed getting file-type").extension();
+        let file_infer = infer::get(&buffer);
+        if file_infer.is_none() { continue; }
+        let expected_extension = file_infer.unwrap().extension();
         path.set_extension(expected_extension);
 
         if file_path == path.to_str().unwrap() { continue; }
         
+        println!("Renamed {} to {}", file_path, path.to_str().unwrap());
         rename(file_path, path).expect("failed renaming file");
     }
 }
