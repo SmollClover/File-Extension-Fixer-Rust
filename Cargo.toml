@@ -8,7 +8,9 @@ name = "fixFileExt"
 path = "./src/main.rs"
 
 [profile.release]
+strip = true
 lto = true
+codegen-units = 1
 
 [dependencies]
 indicatif = "0.17.9"
